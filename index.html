@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恆大集團</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        * {margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang TC","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;}
+        body{
+            background: linear-gradient(135deg, #1f1f1f 0%, #2e2e2e 100%);
+            color:#f5f5f7;
+        }
+
+        .glass{
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+
+        .home-page{
+            position:fixed;
+            inset:0;
+            background: linear-gradient(135deg, #1e1e1e 0%, #3a3a3a 100%);
+            z-index:10000;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            padding:24px;
+            overflow:hidden;
+        }
+
+        .sign-in-btn{
+            position:absolute;
+            top:18px;
+            right:18px;
+            width:46px;
+            height:46px;
+            border-radius:50%;
+            background:rgba(255,255,255,0.14);
+            backdrop-filter: blur(18px) saturate(130%);
+            -webkit-backdrop-filter: blur(18px) saturate(130%);
+            border:1px solid rgba(255,255,255,0.20);
+            box-shadow:0 4px 18px rgba(0,0,0,0.22);
+            color:#ffffff;
+            font-size:14px;
+            font-weight:600;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+            transition:0.22s ease;
+            z-index:10;
+        }
+        .sign-in-btn:hover{
+            background:rgba(255,255,255,0.24);
+            transform:scale(1.05);
+        }
+        .sign-in-btn:active{
+            transform:scale(0.97);
+        }
+
+        .grid-bg{
+            position:absolute;
+            width:180vmax;
+            height:180vmax;
+            top:50%;
+            left:50%;
+            z-index:1;
+            pointer-events:none;
+            transform-origin: center center;
+            animation: filmScroll 60s linear infinite;
+        }
+        @keyframes filmScroll {
+            0% {
+                transform: translate(-50%, -50%) rotate(45deg) translate(0, 0);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(45deg) translate(80vmax, 80vmax);
+            }
+        }
+
+        .grid-row{
+            display:grid;
+            grid-template-columns:repeat(8, 1fr);
+            gap:12px;
+            margin-bottom:12px;
+        }
+        .grid-row.offset-row{
+            padding-left:calc(12vmax / 16);
+        }
+        .grid-cell{
+            border:1px solid rgba(255,255,255,0.10);
+            overflow:hidden;
+            aspect-ratio:1/1;
+            border-radius:10px;
+        }
+        .grid-cell img{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            opacity:0.10;
+        }
+
+        .home-content{
+            position:relative;
+            z-index:10;
+            text-align:center;
+            max-width:380px;
+            width:100%;
+        }
+        .home-page h1{
+            color:#ffffff;
+            margin-bottom:52px;
+            font-size:48px;
+            font-weight:800;
+            letter-spacing:1px;
+        }
+        .home-btn{
+            width:100%;
+            padding:22px 20px;
+            margin:14px 0;
+            border:none;
+            border-radius:20px;
+            font-size:20px;
+            font-weight:600;
+            cursor:pointer;
+            transition:all 0.26s ease;
+            background:rgba(255,255,255,0.16);
+            backdrop-filter: blur(18px) saturate(130%);
+            -webkit-backdrop-filter: blur(18px) saturate(130%);
+            border:1px solid rgba(255,255,255,0.22);
+            box-shadow:0 6px 24px rgba(0,0,0,0.18);
+            color:#ffffff;
+        }
+        .home-btn:hover{
+            background:rgba(255,255,255,0.28);
+            transform:translateY(-3px) scale(1.01);
+            box-shadow:0 12px 34px rgba(0,0,0,0.25);
+        }
+        .home-btn:active{
+            transform:translateY(1px) scale(0.995);
+        }
+
+        .top-bar{
+            background: rgba(45,45,45,0.88);
+            backdrop-filter: blur(22px) saturate(145%);
+            -webkit-backdrop-filter: blur(22px) saturate(145%);
+            border-bottom:1px solid rgba(255,255,255,0.14);
+            color:#ffffff;
+            padding:18px 16px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            box-shadow:0 2px 18px rgba(0,0,0,0.30);
+        }
+        .top-bar h2{font-size:18px;font-weight:600;letter-spacing:-0.3px;}
+        .back-home{
+            background:rgba(255,255,255,0.12);
+            color:#ffffff;
+            border:none;
+            padding:8px 16px;
+            border-radius:12px;
+            cursor:pointer;
+            font-size:14px;
+            transition:0.22s;
+        }
+        .back-home:hover{background:rgba(255,255,255,0.20);}
+        #map{width:100%;height:calc(100vh - 116px);}
+
+        .mask{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.42);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index:9999;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            padding:16px;
+        }
+        .modal{
+            background: rgba(55,55,55,0.94);
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+            border:1px solid rgba(255,255,255,0.20);
+            border-radius:24px;
+            padding:28px 24px;
+            width:100%;
+            max-width:370px;
+            max-height:88vh;
+            overflow:auto;
+            box-shadow:0 14px 44px rgba(0,0,0,0.32);
+            color:#f5f5f7;
+        }
+        .modal h3{
+            text-align:center;
+            margin-bottom:22px;
+            font-weight:600;
+            font-size:20px;
+            color:#ffffff;
+            letter-spacing:-0.3px;
+        }
+        .order-info-block{
+            font-size:15px;
+            line-height:1.95;
+            margin-bottom:22px;
+            background:rgba(255,255,255,0.10);
+            border:1px solid rgba(255,255,255,0.16);
+            padding:16px;
+            border-radius:16px;
+        }
+        .qr-img{width:220px;display:block;margin:0 auto 20px auto;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.32);}
+        .preview-box{
+            width:100%;
+            min-height:190px;
+            border:2px dashed rgba(255,255,255,0.20);
+            border-radius:16px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            margin-bottom:18px;
+            overflow:hidden;
+            background:rgba(255,255,255,0.08);
+        }
+        .preview-box img{max-width:100%;max-height:240px;object-fit:contain;}
+        .hidden-input{display:none;}
+        .btn{
+            width:100%;
+            padding:14px;
+            margin:8px 0;
+            border-radius:14px;
+            border:none;
+            font-size:16px;
+            cursor:pointer;
+            font-weight:550;
+            transition:0.22s ease;
+        }
+        .btn:active{transform:scale(0.97);}
+        .btn-alipay{background:#1677ff;color:#fff;}
+        .btn-wechat{background:#07c160;color:#fff;}
+        .btn-primary{background:#009688;color:white;}
+        .btn-warning{background:#ed8936;color:white;}
+        .btn-cancel{
+            background:rgba(255,255,255,0.14);
+            color:#f5f5f7;
+        }
+
+        .form-row{margin:14px 0;}
+        .form-row label{display:block;margin-bottom:7px;font-size:14px;color:#d1d1d6;}
+        .form-row input,.form-row select{
+            width:100%;
+            padding:12px 14px;
+            border:1px solid rgba(255,255,255,0.14);
+            border-radius:14px;
+            font-size:15px;
+            background:rgba(255,255,255,0.10);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color:#f5f5f7;
+        }
+        .form-row input:focus,.form-row select:focus{
+            outline:none;
+            border-color:#009688;
+            box-shadow:0 0 0 3px rgba(0,150,136,0.15);
+        }
+
+        .popup-wrap{min-width:330px;padding:6px 4px;}
+        .racket-row{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin:10px 0;
+            font-size:14px;
+            padding:6px 0;
+        }
+        .racket-row button{
+            padding:6px 11px;
+            border-radius:10px;
+            border:1px solid rgba(255,255,255,0.14);
+            background:rgba(255,255,255,0.12);
+            backdrop-filter:blur(12px);
+            cursor:pointer;
+            font-size:13px;
+            transition:0.18s;
+            color:#f5f5f7;
+        }
+        .racket-row button:disabled{opacity:0.45;cursor:not-allowed;}
+        .nav-group{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;}
+        .nav-group button{
+            padding:7px 11px;
+            border:none;
+            color:white;
+            border-radius:10px;
+            cursor:pointer;
+            font-size:12.5px;
+        }
+        .btn-walk{background:#27ae60;}
+        .btn-car{background:#2980b9;}
+        .btn-transit{background:#8e44ad;}
+
+        .app-page{display:none;}
+
+        .leaflet-popup-content-wrapper{
+            background:rgba(55,55,55,0.94);
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
+            border-radius:20px;
+            box-shadow:0 10px 30px rgba(0,0,0,0.32);
+            color:#f5f5f7;
+        }
+        .leaflet-popup-tip{
+            background:rgba(55,55,55,0.94);
+        }
+
+        .auth-mask{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.50);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index:99999;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            padding:20px;
+        }
+        .auth-card{
+            width:100%;
+            max-width:440px;
+            background:transparent;
+            position:relative;
+        }
+        .auth-close{
+            position:absolute;
+            top:0px;
+            right:0px;
+            width:44px;
+            height:44px;
+            border-radius:50%;
+            border:none;
+            background:rgba(255,255,255,0.14);
+            font-size:24px;
+            cursor:pointer;
+            color:#ffffff;
+            z-index:2;
+        }
+        .auth-title{
+            text-align:center;
+            font-size:52px;
+            font-weight:800;
+            color:#ffffff;
+            margin-bottom:36px;
+        }
+        .auth-item{
+            margin:24px 0;
+        }
+        .auth-item label{
+            display:block;
+            font-size:26px;
+            color:#d1d1d6;
+            margin-bottom:12px;
+        }
+        .auth-item input{
+            width:100%;
+            font-size:28px;
+            padding:22px 26px;
+            border-radius:22px;
+            border:2px solid rgba(255,255,255,0.20);
+            background:rgba(255,255,255,0.10);
+            color:#ffffff;
+        }
+        .auth-item input:focus{
+            outline:none;
+            border-color:#009688;
+        }
+        .auth-login-btn{
+            width:100%;
+            padding:22px;
+            border-radius:22px;
+            border:none;
+            background:#009688;
+            color:#fff;
+            font-size:32px;
+            font-weight:bold;
+            margin:28px 0 36px;
+            cursor:pointer;
+        }
+        .auth-switch-text{
+            text-align:center;
+            font-size:28px;
+            color:#d1d1d6;
+        }
+        .auth-switch-link{
+            color:#009688;
+            font-weight:bold;
+            cursor:pointer;
+        }
+
+        .user-info-bar{
+            display:none;
+            align-items:center;
+            gap:10px;
+        }
+        .user-avatar{
+            width:38px;
+            height:38px;
+            border-radius:50%;
+            background:linear-gradient(135deg,#009688,#00d4b8);
+            color:white;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:16px;
+            font-weight:600;
+        }
+        .user-name{
+            font-size:14px;
+            font-weight:600;
+            color:#ffffff;
+        }
+        .sign-out-btn{
+            background:rgba(255,255,255,0.12);
+            border:none;
+            padding:7px 14px;
+            border-radius:10px;
+            font-size:13px;
+            color:#ffffff;
+            cursor:pointer;
+            transition:0.2s;
+        }
+        .sign-out-btn:hover{
+            background:rgba(255,255,255,0.22);
+        }
+    </style>
+</head>
+<body>
+
+<!-- 首頁封面 -->
+<div class="home-page" id="homePage">
+    <button class="sign-in-btn" id="signInBtn">Sign In</button>
+
+    <div class="grid-bg" id="gridBg"></div>
+    <div class="home-content">
+        <h1>恆大集團</h1>
+        <button class="home-btn" onclick="enterBasketball()">籃球 - 場館預約</button>
+        <button class="home-btn" onclick="enterBadminton()">羽毛球 - 球拍借用</button>
+        <button class="home-btn" onclick="enterTennis()">網球 - 球拍借用</button>
+    </div>
+</div>
+
+<!-- 登入註冊彈窗 -->
+<div class="auth-mask" id="authMask">
+    <div class="auth-card">
+        <button class="auth-close" onclick="closeAuth()">×</button>
+
+        <div id="loginView">
+            <h2 class="auth-title">Sign In</h2>
+            <div class="auth-item">
+                <label>Email</label>
+                <input type="email" id="loginEmail" placeholder="輸入您的電郵">
+            </div>
+            <div class="auth-item">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="輸入您的密碼">
+            </div>
+            <button class="auth-login-btn" onclick="handleLogin()">Login</button>
+            <div class="auth-switch-text">
+                還沒有帳號？<span class="auth-switch-link" onclick="showRegister()">Register</span>
+            </div>
+        </div>
+
+        <div id="registerView" style="display:none;">
+            <h2 class="auth-title">Register</h2>
+            <div class="auth-item">
+                <label>Name</label>
+                <input type="text" id="registerName" placeholder="輸入您的姓名">
+            </div>
+            <div class="auth-item">
+                <label>Email</label>
+                <input type="email" id="registerEmail" placeholder="輸入您的電郵">
+            </div>
+            <div class="auth-item">
+                <label>Password</label>
+                <input type="password" id="registerPassword" placeholder="設定密碼">
+            </div>
+            <button class="auth-login-btn" onclick="handleRegister()">Register</button>
+            <div class="auth-switch-text">
+                已有帳號？<span class="auth-switch-link" onclick="showLogin()">Sign In</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 應用主體頁面 -->
+<div class="app-page" id="appPage">
+    <div class="top-bar">
+        <button class="back-home" onclick="goHome()">返回首頁</button>
+        <h2 id="pageTitle">羽毛球借用服務</h2>
+        <div style="opacity:0.85;font-size:13px" id="pageSubTitle">單次100元｜租期2小時</div>
+        <div class="user-info-bar" id="userInfoBar">
+            <div class="user-avatar" id="userAvatar">U</div>
+            <div class="user-name" id="userName">使用者</div>
+            <button class="sign-out-btn" onclick="signOut()">Sign Out</button>
+        </div>
+    </div>
+    <div id="map"></div>
+</div>
+
+<!--支付彈窗-->
+<div class="mask" id="payMask">
+    <div class="modal">
+        <h3>借用訂單</h3>
+        <div class="order-info-block" id="orderInfo"></div>
+
+        <button class="btn btn-wechat" onclick="switchQr('wechat')">微信支付</button>
+        <button class="btn btn-alipay" onclick="switchQr('alipay')">支付寶支付</button>
+
+        <img class="qr-img" id="payQrImg" alt="收款碼">
+
+        <button class="btn btn-primary" onclick="confirmPay()">確認收到付款</button>
+        <button class="btn btn-cancel" onclick="closePay()">取消</button>
+    </div>
+</div>
+
+<!--球拍歸還上傳照片彈窗-->
+<div class="mask" id="returnPhotoMask">
+    <div class="modal">
+        <h3>球拍歸還驗證</h3>
+        <div style="font-size:14px;color:#d1d1d6;margin-bottom:14px;">請上傳歸還球拍實拍照片，確認器材完好。可從桌面、相簿、資料夾選擇照片添加</div>
+        <div class="preview-box" id="returnPreviewBox">
+            <span style="color:#999;">照片預覽區域</span>
+        </div>
+        <input class="hidden-input" accept="image/*" capture="camera" type="file" id="returnPhotoInput">
+        <label for="returnPhotoInput">
+            <button class="btn btn-warning" type="button">拍照 / 從相簿選擇</button>
+        </label>
+        <button class="btn btn-primary" id="submitReturnBtn" onclick="submitReturn()" disabled>確認提交歸還</button>
+        <button class="btn btn-cancel" onclick="closeReturnPhotoMask()">取消歸還</button>
+    </div>
+</div>
+
+<!--開箱驗證碼彈窗-->
+<div class="mask" id="unboxMask">
+    <div class="modal">
+        <h3>開箱驗證碼（模擬）</h3>
+        <canvas id="unboxCanvas" style="display:block;margin:14px auto;"></canvas>
+        <div style="font-size:12px;color:#777;text-align:center;margin-bottom:16px;">僅供演示模擬，非真實核銷碼</div>
+        <button class="btn btn-primary" onclick="closeUnbox()">下一步，取得憑證</button>
+    </div>
+</div>
+
+<!--借用憑證彈窗-->
+<div class="mask" id="ticketMask">
+    <div class="modal">
+        <h3>憑證</h3>
+        <div class="order-info-block" id="ticketInfo"></div>
+        <canvas id="ticketCanvas" style="display:block;margin:12px auto;"></canvas>
+        <div style="font-size:12px;color:#777;text-align:center;margin-bottom:14px;">截圖保存，歸還/入場時出示</div>
+        <button class="btn btn-cancel" onclick="closeTicket()">關閉</button>
+    </div>
+</div>
+
+<!--籃球場館預約彈窗-->
+<div class="mask" id="bookMask">
+    <div class="modal">
+        <h3>籃球場館預約</h3>
+        <div class="form-row">
+            <label>預約場館</label>
+            <input type="text" id="bookVenue" readonly>
+        </div>
+        <div class="form-row">
+            <label>預約日期</label>
+            <input type="date" id="bookDate">
+        </div>
+        <div class="form-row">
+            <label>預約時段</label>
+            <select id="bookTime">
+                <option>09:00‑11:00</option>
+                <option>11:00‑13:00</option>
+                <option>14:00‑16:00</option>
+                <option>16:00‑18:00</option>
+                <option>18:00‑20:00</option>
+                <option>20:00‑22:00</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>聯絡姓名</label>
+            <input type="text" id="bookName" placeholder="輸入姓名">
+        </div>
+        <div class="form-row">
+            <label>聯絡電話</label>
+            <input type="text" id="bookPhone" placeholder="輸入手機號">
+        </div>
+        <div style="margin:14px 0;font-weight:bold;color:#ff6b6b;text-align:center;">預約費用：280元/場</div>
+        <button class="btn btn-primary" onclick="submitBook()">提交預約</button>
+        <button class="btn btn-cancel" onclick="closeBook()">取消</button>
+    </div>
+</div>
+
+<script>
+let currentUser = null;
+
+(function buildBackgroundGrid(){
+    const imageList = [
+        "lebron.jpg",
+        "federer.jpg",
+        "lin.jpg",
+        "harden.jpg",
+        "lee.jpg"
+    ];
+    const gridContainer = document.getElementById("gridBg");
+    const rowCount = 24;
+    const colCount = 8;
+    const gridIndexTable = [];
+
+    for(let r=0; r<rowCount; r++){
+        const rowWrap = document.createElement("div");
+        rowWrap.className = "grid-row" + (r % 2 ===1 ? " offset-row":"");
+        gridIndexTable[r] = [];
+
+        for(let c=0; c<colCount; c++){
+            const forbid = new Set();
+            if(r>0) forbid.add(gridIndexTable[r-1][c]);
+            if(c>0) forbid.add(gridIndexTable[r][c-1]);
+            if(r>0 && c>0) forbid.add(gridIndexTable[r-1][c-1]);
+            if(r>0 && c+1 < colCount) forbid.add(gridIndexTable[r-1][c+1]);
+
+            let available = [];
+            for(let i=0;i<imageList.length;i++){
+                if(!forbid.has(i)) available.push(i);
+            }
+            const pickIdx = available[Math.floor(Math.random()*available.length)];
+            gridIndexTable[r][c] = pickIdx;
+
+            const cell = document.createElement("div");
+            cell.className = "grid-cell";
+            const img = document.createElement("img");
+            img.src = imageList[pickIdx];
+            img.draggable = false;
+            cell.appendChild(img);
+            rowWrap.appendChild(cell);
+        }
+        gridContainer.appendChild(rowWrap);
+    }
+})();
+
+const baseBadminton = [
+    {name:"天斧100zz", stock:5, max:5},
+    {name:"天斧1000z", stock:5, max:5},
+    {name:"天斧88D pro", stock:5, max:5},
+    {name:"天斧99 pro", stock:5, max:5}
+];
+
+const baseTennis = [
+    {name:"Pure Drive", stock:5, max:5},
+    {name:"Pure Aero", stock:5, max:5},
+    {name:"Head Radical L4", stock:5, max:5},
+    {name:"YONEX EZONE100", stock:5, max:5},
+    {name:"Wilson Blade V9", stock:5, max:5}
+];
+
+const badmintonShops = [
+    {name:"彩虹道羽毛球中心",address:"黃大仙彩虹道150號",lat:22.3412,lng:114.1935},
+    {name:"九龍灣羽毛球館",address:"九龍灣宏光道40號",lat:22.3245,lng:114.2110},
+    {name:"藍田體育館羽球場",address:"藍田啟田道9號",lat:22.3021,lng:114.2340},
+    {name:"沙田體育館",address:"沙田源禾路1號",lat:22.3870,lng:114.1850},
+    {name:"大埔體育館",address:"大埔汀角路33號",lat:22.4520,lng:114.1630},
+    {name:"荃灣體育館",address:"荃灣永順街53號",lat:22.3740,lng:114.1120},
+    {name:"葵青體育館",address:"葵青興盛路17號",lat:22.3600,lng:114.0840},
+    {name:"屯門體育館",address:"屯門新墟青賢街1號",lat:22.3950,lng:114.0230},
+    {name:"元朗體育館",address:"元朗馬田路52號",lat:22.4470,lng:114.0270},
+    {name:"港島東體育館",address:"西灣河鯉景灣道38號",lat:22.2820,lng:114.2280}
+];
+
+const tennisShops = [
+    {name:"維多利亞公園網球場",address:"銅鑼灣興發街1號",lat:22.2790,lng:114.1910},
+    {name:"九龍公園網球場",address:"尖沙咀柯士甸道22號",lat:22.3005,lng:114.1722},
+    {name:"沙田馬場網球場",address:"沙田火炭樂景街28號",lat:22.3830,lng:114.1810},
+    {name:"粉嶺網球場",address:"粉嶺新運路63號",lat:22.4930,lng:114.1430},
+    {name:"將軍澳網球場",address:"將軍澳運隆路8號",lat:22.3100,lng:114.2510},
+    {name:"青衣網球場",address:"青衣青敬路17號",lat:22.3580,lng:114.0950},
+    {name:"天水圍網球場",address:"天水圍天耀路11號",lat:22.4550,lng:114.0040},
+    {name:"馬鞍山網球場",address:"馬鞍山恆康街60號",lat:22.4210,lng:114.2220},
+    {name:"灣仔運動場網球場",address:"灣仔愛群道28號",lat:22.2730,lng:114.1750},
+    {name:"荔枝角公園網球場",address:"荔枝角荔灣道1號",lat:22.3370,lng:114.1400}
+];
+
+const basketballShops = [
+    {name:"九龍公園籃球館",address:"尖沙咀柯士甸道22號",lat:22.3005,lng:114.1722},
+    {name:"藍田體育館籃球場",address:"藍田啟田道9號",lat:22.3021,lng:114.2340},
+    {name:"沙田圓洲角體育館",address:"沙田插桅杆街26號",lat:22.3890,lng:114.1940},
+    {name:"大埔體育館球場",address:"大埔汀角路33號",lat:22.4520,lng:114.1630},
+    {name:"荃灣體育館",address:"荃灣永順街53號",lat:22.3740,lng:114.1120},
+    {name:"葵盛體育館",address:"葵盛圍303號",lat:22.3640,lng:114.0810},
+    {name:"屯門良景體育館",address:"屯門良景邨良景路",lat:22.4040,lng:114.0160},
+    {name:"元朗朗屏體育館",address:"元朗朗屏邨",lat:22.4440,lng:114.0210},
+    {name:"港島東籃球館",address:"西灣河鯉景灣道38號",lat:22.2820,lng:114.2280},
+    {name:"將軍澳體育館",address:"將軍澳運隆路8號",lat:22.3100,lng:114.2510}
+];
+
+let map;
+let myPos = {lat:null,lng:null};
+let currentSport = "badminton";
+let currentShopIdx = null;
+let currentRacketIdx = null;
+let activeOrder = null;
+let bookOrder = null;
+let shopRacketData = [];
+let markerList = [];
+let selectedReturnImageFile = null;
+
+const returnPhotoInput = document.getElementById("returnPhotoInput");
+returnPhotoInput.addEventListener('change',function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    selectedReturnImageFile = file;
+    const previewBox = document.getElementById("returnPreviewBox");
+    const reader = new FileReader();
+    reader.onload = function(ev){
+        previewBox.innerHTML = `<img src="${ev.target.result}" alt="歸還照片預覽">`;
+        document.getElementById("submitReturnBtn").disabled = false;
+    }
+    reader.readAsDataURL(file);
+})
+
+document.getElementById("signInBtn").addEventListener("click", function(){
+    document.getElementById("authMask").style.display = "flex";
+    showLogin();
+});
+
+function closeAuth(){
+    document.getElementById("authMask").style.display = "none";
+}
+
+function showLogin(){
+    document.getElementById("loginView").style.display = "block";
+    document.getElementById("registerView").style.display = "none";
+}
+
+function showRegister(){
+    document.getElementById("loginView").style.display = "none";
+    document.getElementById("registerView").style.display = "block";
+}
+
+function handleLogin(){
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
+
+    if(!email || !password){
+        alert("請填寫 Email 和 Password");
+        return;
+    }
+
+    currentUser = {
+        name: email.split("@")[0],
+        email: email
+    };
+
+    updateUserUI();
+    closeAuth();
+    alert("登入成功：" + currentUser.email);
+}
+
+function handleRegister(){
+    const name = document.getElementById("registerName").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
+    const password = document.getElementById("registerPassword").value.trim();
+
+    if(!name || !email || !password){
+        alert("請填寫完整註冊資訊");
+        return;
+    }
+
+    currentUser = {
+        name: name,
+        email: email
+    };
+
+    updateUserUI();
+    closeAuth();
+    alert("註冊成功：" + currentUser.name);
+}
+
+function signOut(){
+    currentUser = null;
+    updateUserUI();
+    alert("已登出");
+}
+
+function updateUserUI(){
+    const signInBtn = document.getElementById("signInBtn");
+    const userInfoBar = document.getElementById("userInfoBar");
+    const userName = document.getElementById("userName");
+    const userAvatar = document.getElementById("userAvatar");
+
+    if(currentUser){
+        signInBtn.style.display = "none";
+        userInfoBar.style.display = "flex";
+        userName.textContent = currentUser.name;
+        userAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
+    }else{
+        signInBtn.style.display = "flex";
+        userInfoBar.style.display = "none";
+    }
+}
+
+function enterBasketball(){
+    currentSport = "basketball";
+    document.getElementById("homePage").style.display = "none";
+    document.getElementById("appPage").style.display = "block";
+    document.getElementById("pageTitle").innerText = "籃球場館預約";
+    document.getElementById("pageSubTitle").innerText = "場地280元/場";
+    initMapApp();
+}
+function enterBadminton(){
+    currentSport = "badminton";
+    document.getElementById("homePage").style.display = "none";
+    document.getElementById("appPage").style.display = "block";
+    document.getElementById("pageTitle").innerText = "羽毛球借用服務";
+    document.getElementById("pageSubTitle").innerText = "單次100元｜租期2小時";
+    initMapApp();
+}
+function enterTennis(){
+    currentSport = "tennis";
+    document.getElementById("homePage").style.display = "none";
+    document.getElementById("appPage").style.display = "block";
+    document.getElementById("pageTitle").innerText = "網球借用服務";
+    document.getElementById("pageSubTitle").innerText = "單次100元｜租期2小時";
+    initMapApp();
+}
+function goHome(){
+    document.getElementById("homePage").style.display = "flex";
+    document.getElementById("appPage").style.display = "none";
+    if(map){ map.remove(); map=null; }
+    markerList = [];
+}
+
+function initMapApp(){
+    if(currentSport === "badminton"){
+        shopRacketData = badmintonShops.map(s=>{ return {...s, rackets:JSON.parse(JSON.stringify(baseBadminton))}; });
+    }else if(currentSport === "tennis"){
+        shopRacketData = tennisShops.map(s=>{ return {...s, rackets:JSON.parse(JSON.stringify(baseTennis))}; });
+    }else if(currentSport === "basketball"){
+        shopRacketData = [...basketballShops];
+    }
+
+    if(map){
+        markerList.forEach(m=>map.removeLayer(m));
+        markerList = [];
+    }else{
+        map = L.map('map').setView([22.31,114.18],11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+    }
+
+    if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(function(pos){
+            myPos.lat = pos.coords.latitude;
+            myPos.lng = pos.coords.longitude;
+            L.marker([myPos.lat,myPos.lng]).addTo(map).bindPopup("我的位置").openPopup();
+        },function(err){console.log("定位失敗");})
+    }
+
+    shopRacketData.forEach((shop,index)=>{
+        const marker = L.marker([shop.lat,shop.lng]).addTo(map);
+        marker.bindPopup(buildPopupHtml(shop,index));
+        markerList.push(marker);
+    })
+
+    map.off("popupopen");
+    map.on("popupopen",function(e){
+        const popupDom = e.popup.getElement();
+        const shopIndex = Number(e.popup.getContent().match(/shopIndex=(\d+)/)[1]);
+        currentShopIdx = shopIndex;
+        const shop = shopRacketData[shopIndex];
+
+        if(currentSport === "badminton" || currentSport === "tennis"){
+            popupDom.querySelectorAll(".rent-btn").forEach(btn=>{
+                const rIdx = Number(btn.dataset.ridx);
+                if(btn.dataset.op === "rent"){
+                    btn.onclick = ()=> openRentDialog(shopIndex,rIdx);
+                }else if(btn.dataset.op === "return"){
+                    btn.onclick = ()=>{
+                        openReturnPhotoMask(shopIndex,rIdx);
+                    }
+                }
+            })
+        }else if(currentSport === "basketball"){
+            popupDom.querySelector(".book-btn").onclick = ()=> openBookDialog(shopIndex);
+        }
+
+        popupDom.querySelectorAll(".nav-group button").forEach(navBtn=>{
+            navBtn.onclick = ()=>{
+                const mode = navBtn.dataset.mode;
+                const destLat = shop.lat;
+                const destLng = shop.lng;
+                let appleUrl;
+                if(myPos.lat && myPos.lng){
+                    appleUrl = `http://maps.apple.com/?saddr=${myPos.lat},${myPos.lng}&daddr=${destLat},${destLng}&dirflg=${mode}`;
+                }else{
+                    appleUrl = `http://maps.apple.com/?daddr=${destLat},${destLng}&dirflg=${mode}`;
+                }
+                window.open(appleUrl,"_blank");
+            }
+        })
+    })
+}
+
+function buildPopupHtml(shop,shopIndex){
+    if(currentSport === "basketball"){
+        return `<!--shopIndex=${shopIndex}-->
+        <div class="popup-wrap">
+            <h4>${shop.name}</h4>
+            <div>${shop.address}</div>
+            <div style="margin:12px 0;">
+                <button class="book-btn btn-primary">預約本場館</button>
+            </div>
+            <div class="nav-group">
+                <button class="btn-walk" data-mode="w">步行(蘋果地圖)</button>
+                <button class="btn-car" data-mode="d">駕車(蘋果地圖)</button>
+                <button class="btn-transit" data-mode="r">公交(蘋果地圖)</button>
+            </div>
+        </div>`;
+    }else{
+        let racketHtml = "";
+        shop.rackets.forEach((r,ri)=>{
+            racketHtml += `
+            <div class="racket-row">
+                <span>${r.name} 庫存：${r.stock}/${r.max}</span>
+                <div>
+                    <button class="rent-btn" data-op="rent" data-ridx="${ri}" ${r.stock<=0?"disabled":""}>借用</button>
+                    <button class="rent-btn" data-op="return" data-ridx="${ri}" ${r.stock>=r.max?"disabled":""}>歸還</button>
+                </div>
+            </div>`
+        })
+        return `<!--shopIndex=${shopIndex}-->
+        <div class="popup-wrap">
+            <h4>${shop.name}</h4>
+            <div>${shop.address}</div>
+            <div style="margin:10px 0;"></div>
+            ${racketHtml}
+            <div class="nav-group">
+                <button class="btn-walk" data-mode="w">步行(蘋果地圖)</button>
+                <button class="btn-car" data-mode="d">駕車(蘋果地圖)</button>
+                <button class="btn-transit" data-mode="r">公交(蘋果地圖)</button>
+            </div>
+        </div>`;
+    }
+}
+
+function refreshCurrentPopup(){
+    map.closePopup();
+    const shop = shopRacketData[currentShopIdx];
+    L.popup().setLatLng([shop.lat,shop.lng]).setContent(buildPopupHtml(shop,currentShopIdx)).openOn(map);
+}
+
+function openReturnPhotoMask(shopIdx,racketIdx){
+    currentShopIdx = shopIdx;
+    currentRacketIdx = racketIdx;
+    selectedReturnImageFile = null;
+    document.getElementById("returnPreviewBox").innerHTML = `<span style="color:#999;">照片預覽區域</span>`;
+    document.getElementById("returnPhotoInput").value = "";
+    document.getElementById("submitReturnBtn").disabled = true;
+    document.getElementById("returnPhotoMask").style.display = "flex";
+}
+function closeReturnPhotoMask(){
+    document.getElementById("returnPhotoMask").style.display = "none";
+    selectedReturnImageFile = null;
+}
+
+function submitReturn(){
+    if(!selectedReturnImageFile){
+        alert("請先上傳球拍歸還實拍照片");
+        return;
+    }
+    const shop = shopRacketData[currentShopIdx];
+    const racket = shop.rackets[currentRacketIdx];
+    if(racket.stock >= racket.max){
+        alert("庫存已滿，不需要歸還");
+        closeReturnPhotoMask();
+        return;
+    }
+    racket.stock +=1;
+    closeReturnPhotoMask();
+    alert(`歸還驗證完成，已保存歸還照片，${racket.name} 當前庫存：${racket.stock}`);
+    refreshCurrentPopup();
+}
+
+function openRentDialog(shopIdx,racketIdx){
+    currentShopIdx = shopIdx;
+    currentRacketIdx = racketIdx;
+    const shop = shopRacketData[shopIdx];
+    const racket = shop.rackets[currentRacketIdx];
+    const now = new Date();
+    const expire = new Date(now.getTime() + 2*3600*1000);
+    const orderNo = "ORD" + Date.now();
+    activeOrder = {
+        no:orderNo,
+        shop:shop.name,
+        racket:racket.name,
+        start:now.toLocaleString(),
+        expire:expire.toLocaleString()
+    }
+    document.getElementById("orderInfo").innerText =
+`訂單號：${orderNo}
+場館：${shop.name}
+器材：${racket.name}
+費用：100元（租期2小時）`;
+
+    document.getElementById("payQrImg").src = "";
+    document.getElementById("payMask").style.display = "flex";
+}
+
+function switchQr(type){
+    const img = document.getElementById("payQrImg");
+    if(type === "alipay") img.src = "alipay.png";
+    if(type === "wechat") img.src = "wechat.png";
+}
+
+function confirmPay(){
+    if(!activeOrder) return;
+    const shop = shopRacketData[currentShopIdx];
+    const racket = shop.rackets[currentRacketIdx];
+    racket.stock -=1;
+    closePay();
+    refreshCurrentPopup();
+    const unboxText = `UNBOX‑${activeOrder.no}‑SIMULATE‑OPEN‑KEY‑DEMO`;
+    QRCode.toCanvas(document.getElementById("unboxCanvas"), unboxText, {width:220});
+    document.getElementById("unboxMask").style.display = "flex";
+}
+
+function closePay(){
+    document.getElementById("payMask").style.display = "none";
+    activeOrder = null;
+    document.getElementById("payQrImg").src = "";
+}
+
+function renderTicket(order){
+    const mask = document.getElementById("ticketMask");
+    const infoDom = document.getElementById("ticketInfo");
+    const canvas = document.getElementById("ticketCanvas");
+    const contentText =
+`訂單號：${order.no}
+場館：${order.shop}
+器材：${order.racket}
+借用開始：${order.start}
+到期時間：${order.expire}`;
+    infoDom.innerText = contentText;
+    QRCode.toCanvas(canvas,contentText,{width:220});
+    mask.style.display = "flex";
+}
+
+function closeUnbox(){
+    document.getElementById("unboxMask").style.display = "none";
+    renderTicket(activeOrder);
+}
+
+function closeTicket(){
+    document.getElementById("ticketMask").style.display = "none";
+}
+
+function openBookDialog(shopIdx){
+    currentShopIdx = shopIdx;
+    const shop = shopRacketData[shopIdx];
+    document.getElementById("bookVenue").value = shop.name;
+    document.getElementById("bookDate").valueAsDate = new Date();
+    document.getElementById("bookName").value = "";
+    document.getElementById("bookPhone").value = "";
+    document.getElementById("bookMask").style.display = "flex";
+}
+
+function closeBook(){
+    document.getElementById("bookMask").style.display = "none";
+}
+
+function submitBook(){
+    const venue = document.getElementById("bookVenue").value;
+    const bDate = document.getElementById("bookDate").value;
+    const bTime = document.getElementById("bookTime").value;
+    const name = document.getElementById("bookName").value.trim();
+    const phone = document.getElementById("bookPhone").value.trim();
+    if(!name || !phone){
+        alert("請填寫姓名和聯絡電話");
+        return;
+    }
+    const bookNo = "BK" + Date.now();
+    bookOrder = {
+        no:bookNo,
+        venue:venue,
+        date:bDate,
+        time:bTime,
+        name:name,
+        phone:phone
+    }
+    closeBook();
+    const mask = document.getElementById("ticketMask");
+    const infoDom = document.getElementById("ticketInfo");
+    const canvas = document.getElementById("ticketCanvas");
+    const txt =
+`籃球場館預約憑證
+預約編號：${bookNo}
+場館：${venue}
+日期：${bDate}
+時段：${bTime}
+預約人：${name}
+聯絡：${phone}`;
+    infoDom.innerText = txt;
+    QRCode.toCanvas(canvas,txt,{width:220});
+    mask.style.display = "flex";
+}
+
+</script>
+</body>
+</html>
